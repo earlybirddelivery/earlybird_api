@@ -1,0 +1,2 @@
+class DayPattern < ApplicationRecord
+end

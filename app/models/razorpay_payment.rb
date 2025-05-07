@@ -1,0 +1,2 @@
+class RazorpayPayment < ApplicationRecord
+end

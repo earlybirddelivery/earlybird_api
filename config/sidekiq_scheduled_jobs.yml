@@ -1,0 +1,16 @@
+# This is for all the sidekiq jobs that are going to run in all the environments.
+# NOTE: New cron jobs: sidekiq configuration files to enable that queue in all environments is required ie
+# NOTE: sidekiq-[dev beta demo staging[1 2 3]] production].yaml
+
+default: &default
+  clear_unfinished_orders_worker:
+    cron: '*/20 * * * *  Asia/Kolkata' # Runs every 5 mins
+    class: ClearUnfinishedOrdersWorker
+    queue: razorpay
+development:
+  <<: *default
+staging:
+  <<: *default
+production:
+  <<: *default
+

@@ -1,0 +1,36 @@
+# Ruby CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-ruby/ for more details
+#
+version: 2
+jobs:
+
+  deploy-staging:
+    docker:
+      - image: circleci/ruby:2.6.5
+        environment:
+          RAILS_ENV: staging
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: install dependencies
+          command: |
+            gem update --system
+            gem install bundler
+      - run:
+          name: Bundle install
+          command: bundle check || bundle install
+      - run:
+          name: Deploy to aws Staging if tests pass and branch is dev
+          command: bundle exec cap staging deploy
+
+workflows:
+  version: 2
+
+  build_and_deploy:
+    jobs:
+      - deploy-staging:
+          filters:
+            branches:
+              only: dev

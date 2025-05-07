@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Early Bird</title>
+    <style>
+        body {
+            margin: 0px;
+            position: absolute;
+            width: 100%;
+            background-color: #F1FFF6;
+            height: 100vh;
+        }
+
+        .back {
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+            position: absolute;
+        }
+
+        .main {
+            padding: 40px 12%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-image: url("./images/background.png");
+            height: -webkit-fill-available;
+        }
+
+        @media only screen and (max-width: 768px) {
+            .main {
+                padding: 40px 5%;
+            }
+        }
+
+        .logo {
+            width: 150px;
+        }
+
+        .footer {
+            padding: 40px 0px 10px 0px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footerimg {
+            cursor: pointer;
+            width: 150px;
+            margin-right: 25px;
+            height: 48px;
+        }
+
+        .footerleft {}
+
+        .footerright {
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .mainleft {
+            padding: 30px 0px;
+        }
+
+        .mainheading {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .heading {
+            font-size: 70px;
+            font-weight: 800;
+            color: #53B175;
+        }
+
+        .rightheading {
+            font-size: 22px;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .subheading {
+            padding: 10px 0px;
+            color: #909090;
+        }
+
+        .ordernow {
+            margin: 8px 0px;
+            padding: 15px 30px;
+            color: white;
+            font-size: 14px;
+            text-transform: capitalize;
+            background-color: #53B175;
+            cursor: pointer;
+            border: 0px;
+            border-radius: 13px
+        }
+
+        .body {
+            padding: 15px 0px;
+            font-size: 25px;
+            text-align: center;
+            text-transform: capitalize;
+            line-height: 1.5;
+            font-weight: 700;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body background="background.png">
+
+    <img src="background.png" class="back" />
+
+    <div class="main">
+        <div><img src="logo.png" class="logo" /></div>
+        <div class="mainleft">
+            <div class="mainheading">
+                <div class="heading">Early</div>
+                <div>
+                    <div class="rightheading">grocery</div>
+                    <div class="rightheading">delivery</div>
+                </div>
+            </div>
+            <p class="subheading">Place the order before 6PM today and find the<br /> order at your door step before
+                6AM.</p>
+            <button onclick="orderonEarlybird()" id="bookordernow" class="ordernow">order now</button>
+        </div>
+        <div class="body">
+            hello<br />
+            Rajahmundrians<br />
+            We're going to knock your doors soon
+        </div>
+        <div class="footer">
+            <div class="footerleft">
+                <img id="android" onclick="androidclick()" src="android.png" class="footerimg" />
+                <img id="applestore" onclick="applestore()" src="applelogo.png" class="footerimg" />
+            </div>
+            <div class="footerright">
+                Copyright @ 2020, Earlybird Delivery All rights reserved.
+            </div>
+        </div>
+    </div>
+    <script>
+        function androidclick() {
+            alert("android")
+        }
+        function applestore() {
+            alert("apple")
+        }
+        function orderonEarlybird() {
+            alert("order")
+        }
+    </script>
+
+</body>
+
+</html>

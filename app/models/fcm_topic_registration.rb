@@ -1,0 +1,2 @@
+class FcmTopicRegistration < ApplicationRecord
+end
