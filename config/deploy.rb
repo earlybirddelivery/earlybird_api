@@ -1,4 +1,4 @@
-set :repo_url,        'git@github.com:Loosers003/earlybird_api.git'
+set :repo_url,        'git@github.com:earlybirddelivery/earlybird_api.git'
 set :application,     'earlybird-api'
 set :user,            'deploy'
 set :puma_threads,    [4, 16]
