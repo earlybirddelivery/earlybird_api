@@ -39,4 +39,4 @@ production:
   database: <%= ENV.fetch("DB_NAME") %>
   host: <%= ENV.fetch("DB_HOST") %>
   port: <%= ENV.fetch("DB_PORT") %>
-  sslmode: require
+  sslmode: disable

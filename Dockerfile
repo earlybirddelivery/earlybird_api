@@ -1,6 +1,6 @@
 FROM ruby:3.3.1
 
-
+# Install dependencies
 RUN apt-get update -qq && apt-get install -y \
   build-essential \
   libssl-dev \
@@ -11,18 +11,30 @@ RUN apt-get update -qq && apt-get install -y \
   libgdbm-dev \
   libffi-dev \
   libpq-dev \
-  git
+  git \
+  curl \
+  nodejs \
+  yarn
 
+# Set working directory
 WORKDIR /app
 
+# Copy Gemfiles and install Bundler + Gems
 COPY Gemfile Gemfile.lock ./
-RUN bundle install --verbose
 
+# Install specific bundler version
+RUN gem install bundler -v 2.6.8 && \
+    bundle _2.6.8_ install --jobs=4 --retry=5 --verbose
+
+# Copy the rest of the app
 COPY . .
 
-RUN bundle exec rake assets:precompile
+# Ensure entrypoint has execute permissions
+RUN chmod +x ./entrypoint.sh
 
+# Expose app port
 EXPOSE 3000
 
+# Entrypoint and startup command
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]
