@@ -42,6 +42,18 @@ module V1
       @customer.destroy
     end
 
+    # GET /customers/search?query=some_text
+    def search
+      authorize(Customer)
+      query = params[:query].to_s.strip
+
+      customers = Customer.where('first_name ILIKE ? OR last_name ILIKE ? OR mobile_number ILIKE ?', "%#{query}%", "%#{query}%", "%#{query}%")
+                         .select(:id, :first_name, :last_name, :mobile_number)
+                         .limit(10)
+
+      render json: customers, each_serializer: CustomerSearchSerializer, status: :ok
+    end
+
     private
 
     # Use callbacks to share common setup or constraints between actions.

@@ -9,8 +9,8 @@ module V1
     # GET /orders
     def index
       authorize(Order)
-      @orders = Order.filter(params, current_user, @user_roles).page(params[:page]).per(per_page)
       total_count = Order.filter(params, current_user, @user_roles, true)
+      @orders = Order.filter(params, current_user, @user_roles).page(params[:page]).per(per_page)
       if @user_roles[:is_customer]
         render(json: @orders, each_serializer: OrderCustomerViewSerializer, meta: { total_count: total_count },
                status: :ok, include: '**')
@@ -33,63 +33,99 @@ module V1
     # POST /orders
     def create
       authorize(Order)
-      @order = Order.create!(order_params)
-      @order.process_after_creation
-      render(json: @order, status: :created, serializer: OrderCreateSerializer, include: '**')
+      begin
+        @order = Order.create!(order_params)
+        customer_id = current_user.crm? ? params[:order][:customer_id] : current_user.customer_id
+        @order.process_after_creation(customer_id)
+        render(json: @order, status: :created, serializer: OrderCreateSerializer, include: '**')
+      rescue ActiveRecord::RecordInvalid => e
+        render(json: { success: false, message: "Order creation failed", errors: e.record.errors.full_messages }, status: :unprocessable_entity)
+      rescue StandardError => e
+        render(json: { success: false, message: "Order creation failed", errors: [e.message] }, status: :unprocessable_entity)
+      end
     end
 
     def update
       authorize(@order)
-      @order.update!(order_params)
-      render(json: @order, serializer: OrderCreateSerializer, status: :ok, include: '**')
+      if @order.update(order_params)
+        render(json: @order, serializer: OrderCreateSerializer, status: :ok, include: '**')
+      else
+        render(json: { success: false, message: "Order update failed", errors: @order.errors.full_messages }, status: :unprocessable_entity)
+      end
     end
-
+    
     def place_order
       authorize(@order)
-      @order.update!(order_params)
-      render(json: @order, serializer: OrderCreateSerializer, status: :ok, include: '**')
+      if @order.update(order_params)
+        render(json: @order, serializer: OrderCreateSerializer, status: :ok, include: '**')
+      else
+        render(json: { success: false, message: "Order placement failed", errors: @order.errors.full_messages }, status: :unprocessable_entity)
+      end
     end
-
+    
     def proceed_to_pay
       authorize(@order)
-      @order.update!(order_params)
-      render(json: @order, serializer: OrderCreateSerializer, status: :ok, include: '**')
+      if @order.update(order_params)
+        render(json: @order, serializer: OrderCreateSerializer, status: :ok, include: '**')
+      else
+        render(json: { success: false, message: "Proceed to pay failed", errors: @order.errors.full_messages }, status: :unprocessable_entity)
+      end
     end
-
+    
     def generate_razor_pay_order_id
       authorize(@order)
-      @order.generate_razor_pay_order_id(params[:order][:address_detail_id])
-      render(json: @order, serializer: OrderCreateSerializer, status: :ok, include: '**')
+      begin
+        @order.generate_razor_pay_order_id(params[:order][:address_detail_id])
+        render(json: @order, serializer: OrderCreateSerializer, status: :ok, include: '**')
+      rescue StandardError => e
+        render(json: { success: false, message: "Failed to generate Razorpay order ID", errors: [e.message] }, status: :unprocessable_entity)
+      end
     end
-
+    
     def out_for_delivery
       authorize(@order)
-      @order.update!(status: Order::OUT_FOR_DELIVERY, admin_status: Order::OUT_FOR_DELIVERY)
-      render(json: @order, serializer: OrderShowSerializer, status: :ok, include: '**')
+      if @order.update(status: Order::OUT_FOR_DELIVERY, admin_status: Order::OUT_FOR_DELIVERY)
+        render(json: @order, serializer: OrderShowSerializer, status: :ok, include: '**')
+      else
+        render(json: { success: false, message: "Failed to mark as out for delivery", errors: @order.errors.full_messages }, status: :unprocessable_entity)
+      end
     end
-
+    
     def delivered
       authorize(@order)
-      @order.update!(status: Order::DELIVERED, admin_status: Order::DELIVERED)
-      render(json: @order, serializer: OrderShowSerializer, status: :ok, include: '**')
+      if @order.update(status: Order::DELIVERED, admin_status: Order::DELIVERED)
+        render(json: @order, serializer: OrderShowSerializer, status: :ok, include: '**')
+      else
+        render(json: { success: false, message: "Failed to mark as delivered", errors: @order.errors.full_messages }, status: :unprocessable_entity)
+      end
     end
-
+    
     def payment_confirmation
       authorize(@order)
-      payment_received = @order.confirm_payment(params)
-      render(json: { payment_received: payment_received }, status: :ok)
+      begin
+        payment_received = @order.confirm_payment(params)
+        render(json: { payment_received: payment_received }, status: :ok)
+      rescue StandardError => e
+        render(json: { success: false, message: "Payment confirmation failed", errors: [e.message] }, status: :unprocessable_entity)
+      end
     end
-
+    
     def cancel
       authorize(@order)
-      @order.update!(status: Order::CANCELLED, admin_status: Order::CANCELLED, cancel_reason: params[:order][:cancel_reason])
-      render(json: @order, serializer: OrderShowSerializer, status: :ok, include: '**')
+      if @order.update(status: Order::CANCELLED, admin_status: Order::CANCELLED, cancel_reason: params[:order][:cancel_reason])
+        render(json: @order, serializer: OrderShowSerializer, status: :ok, include: '**')
+      else
+        render(json: { success: false, message: "Order cancellation failed", errors: @order.errors.full_messages }, status: :unprocessable_entity)
+      end
     end
-
+    
     def raise_issue
       authorize(@order)
-      @order.update!(issue_description: params[:order][:issue_description])
-      render(json: @order, serializer: OrderShowSerializer, status: :ok, include: '**')
+      if @order.update(issue_description: params[:order][:issue_description])
+        render(json: @order, serializer: OrderShowSerializer, status: :ok, include: '**')
+      else
+        render(json: { success: false, message: "Failed to raise issue", errors: @order.errors.full_messages }, status: :unprocessable_entity)
+      end
     end
 
     private

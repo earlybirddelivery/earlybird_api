@@ -22,7 +22,7 @@ class AddressDetailPolicy < ApplicationPolicy
   end
 
   def index?
-    user.roles.any? { |role| ReferenceDatum::KEY_CUSTOMER_ACCESS.include?(role) }
+    user.roles.any? { |role| ReferenceDatum::KEY_CUSTOMER_ACCESS.include?(role) } || user.crm?
   end
 
   def destroy?

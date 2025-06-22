@@ -13,14 +13,14 @@ class Order < ApplicationRecord
   ].freeze
   SUBSCRIPTION_STATUS = [CREATED, ACTIVE, PAYMENT_PENDING, EXPIRED, CANCELLED].freeze
 
-  validates :status, inclusion: { in: STATUS_OPTIONS }, if: -> { order_type == OrderConstants::ONE_TIME_DELIVERY }
-  validates :status, inclusion: { in: SUBSCRIPTION_STATUS }, if: -> { order_type == SUBSCRIPTION }
+  validates :status, inclusion: { in: STATUS_OPTIONS }, if: -> { one_time_order? }
+  validates :status, inclusion: { in: SUBSCRIPTION_STATUS }, if: -> { subscription_order? }
   validates :admin_status, inclusion: { in: ADMIN_STATUS_OPTIONS }
 
   belongs_to :customer, optional: true
   belongs_to :delivery_boy, optional: true
   belongs_to :address_detail, optional: true
-  belongs_to :parent, class_name: 'Order'
+  belongs_to :parent, class_name: 'Order', optional: true
   has_many :order_items, dependent: :destroy
   has_one :order_review, dependent: :destroy
   has_one :order_razor_pay_information, dependent: :restrict_with_error
@@ -37,8 +37,16 @@ class Order < ApplicationRecord
   scope :created_order, -> { reorder(created_at: :desc) }
   scope :remove_unfinished_orders, -> { where.not(status: CREATED) }
 
-  def process_after_creation
-    order_columns = generate_order_autofill_data
+  def subscription_order?
+    order_type == SUBSCRIPTION
+  end
+
+  def one_time_order?
+    order_type == OrderConstants::ONE_TIME_DELIVERY
+  end
+
+  def process_after_creation(customer_id = nil)
+    order_columns = generate_order_autofill_data(customer_id)
     update!(order_columns)
   end
 
@@ -54,20 +62,13 @@ class Order < ApplicationRecord
 
   def self.admin_orders(params, count)
     orders = Order.remove_unfinished_orders
+    orders = apply_common_filters(orders, params)
 
     if count
-      return params[:admin_status].present? ?
-               orders.where(admin_status: params[:admin_status]).count :
-               orders.count
+      return orders.count
     end
 
-    filtered = if params[:admin_status].present?
-                 orders.where(admin_status: params[:admin_status])
-               else
-                 orders
-               end
-
-    filtered.packed_order.includes(
+    orders.packed_order.includes(
       :delivery_boy, :customer, :address_detail, :order_review,
       order_items: %i[product product_variant]
     )
@@ -76,16 +77,38 @@ class Order < ApplicationRecord
   def self.customer_orders(params, current_user, count)
     orders = Order.remove_unfinished_orders
                   .where('customer_id = ? OR orders.created_by = ?', current_user.customer_id, current_user.id)
+    orders = apply_common_filters(orders, params)
 
-    # Apply order_type filter only if provided
-    orders = orders.where(order_type: params[:order_type]) if params[:order_type].present?
-
-    return orders.count if count
+    if count
+      return orders.count
+    end
 
     orders.left_outer_joins(:order_items, :customer)
           .group('orders.id', 'customers.first_name', 'customers.last_name')
           .select('orders.*, COUNT(order_items.id) AS item_count, CONCAT(customers.last_name, \' \', customers.first_name) AS customer_name')
           .reorder(created_at: :desc)
+  end
+
+  private
+
+  def self.apply_common_filters(orders, params)
+    orders = orders.where(order_type: params[:order_type]) if params[:order_type].present?
+    orders = orders.where(status: params[:status]) if params[:status].present? && params[:status] != 'all'
+    orders = orders.where(admin_status: params[:admin_status]) if params[:admin_status].present?
+
+    if params[:ordered_from].present? && params[:ordered_to].present?
+      from = Time.zone.parse(params[:ordered_from]).beginning_of_day
+      to = Time.zone.parse(params[:ordered_to]).end_of_day
+      orders = orders.where(created_at: from..to)
+    end
+
+    if params[:delivered_from].present? && params[:delivered_to].present?
+      from = Time.zone.parse(params[:delivered_from]).beginning_of_day
+      to = Time.zone.parse(params[:delivered_to]).end_of_day
+      orders = orders.where(delivery_date: from..to)
+    end
+
+    orders
   end
 
   def subscription?
@@ -96,18 +119,22 @@ class Order < ApplicationRecord
     customer.cart.cart_items.where(cart_item_type: order_type).destroy_all
   end
 
-  def generate_order_autofill_data(delivery_date = nil)
+  def generate_order_autofill_data(customer_id, delivery_date = nil)
+    bill = order_items.pluck(:cost).compact.sum
+    cgst = ENV['cgst'].to_i * bill
+    sgst = ENV['sgst'].to_i * bill
+    today_date = Time.zone.now.to_date
     {
       orderid: "OID#{Time.zone.today.strftime('%Y%m%d')}#{id}",
-      customer_id: User.current_user&.customer_id || parent.customer_id,
-      bill: order_items.pluck(:cost).compact.sum,
-      cgst: Integer(ENV['cgst']) * bill,
-      sgst: Integer(ENV['sgst']) * bill,
+      customer_id: customer_id || User.current_user&.customer_id || parent.customer_id,
+      bill: bill,
+      cgst: cgst,
+      sgst: sgst,
       gst: cgst + sgst,
       delivery_fee: 0,
-      total_bill: gst + delivery_fee + bill,
-      status: parent ? ORDER_PLACED : CREATED,
-      date_of_order: parent.date_of_order,
+      total_bill: gst.to_i + bill.to_i,
+      status: subscription_order? ? ACTIVE : ORDER_PLACED,
+      date_of_order: parent&.date_of_order || Time.zone.now,
       delivery_date: delivery_date || Time.zone.now.hour < 20 ? today_date + 1.day : today_date + 2.days
     }
   end

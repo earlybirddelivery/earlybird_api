@@ -55,6 +55,9 @@ Rails.application.routes.draw do
     resources :brands
     resources :customers do
       post :sign_up, on: :collection
+      collection do
+        get :search
+      end
     end
 
     namespace :delivery_boy_order do

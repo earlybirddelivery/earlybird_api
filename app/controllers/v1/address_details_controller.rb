@@ -5,7 +5,7 @@ module V1
     # GET /address_details
     def index
       authorize(AddressDetail)
-      @address_details = AddressDetail.filter(current_user)
+      @address_details = AddressDetail.filter(customer || current_user.customer)
       render(json: @address_details, each_serializer: AddressDetailSerializer, status: :ok)
     end
 
@@ -37,6 +37,10 @@ module V1
     end
 
     private
+
+    def customer
+      @customer ||= Customer.find(params[:customer_id]) if params[:customer_id]
+    end
 
     # Use callbacks to share common setup or constraints between actions.
     def set_address_detail

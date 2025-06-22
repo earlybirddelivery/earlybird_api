@@ -25,6 +25,7 @@ class CustomerPolicy < ApplicationPolicy
           :district,
           :state,
           :pincode,
+          :address_type,
           :land_mark,
           {
             location_attributes: [:latitude, :longitude]
@@ -32,6 +33,10 @@ class CustomerPolicy < ApplicationPolicy
         ]
       }
     ]
+  end
+
+  def search?
+    user.roles.any? { |role| ReferenceDatum::KEY_ADMIN_ACCESS.include?(role) } || user.crm?
   end
   
   def index?
