@@ -85,7 +85,7 @@ class Order < ApplicationRecord
 
     orders.left_outer_joins(:order_items, :customer)
           .group('orders.id', 'customers.first_name', 'customers.last_name')
-          .select('orders.*, COUNT(order_items.id) AS item_count, CONCAT(customers.last_name, \' \', customers.first_name) AS customer_name')
+          .select('orders.*, COUNT(order_items.id) AS item_count, CONCAT(customers.first_name, \' \', customers.last_name) AS customer_name')
           .reorder(created_at: :desc)
   end
 
@@ -95,6 +95,7 @@ class Order < ApplicationRecord
     orders = orders.where(order_type: params[:order_type]) if params[:order_type].present?
     orders = orders.where(status: params[:status]) if params[:status].present? && params[:status] != 'all'
     orders = orders.where(admin_status: params[:admin_status]) if params[:admin_status].present?
+    orders = orders.where(customer_id: params[:customer_id]) if params[:customer_id].present?
 
     if params[:ordered_from].present? && params[:ordered_to].present?
       from = Time.zone.parse(params[:ordered_from]).beginning_of_day

@@ -60,7 +60,7 @@ class OrderItem < ApplicationRecord
       current_day = 0
       while current_day < total_days
         deliveries += 1
-        current_day += (gap > 0 ? gap : 1)
+        current_day += (gap + 1) # gap days between deliveries means next delivery is after gap+1 days
       end
       deliveries
     elsif quantity_pattern.present?
