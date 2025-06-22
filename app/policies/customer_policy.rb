@@ -15,6 +15,7 @@ class CustomerPolicy < ApplicationPolicy
       :display_pic,
       {
         address_details_attributes: [
+          :id,
           :full_name,
           :door_no,
           :mobile_number,
@@ -28,7 +29,7 @@ class CustomerPolicy < ApplicationPolicy
           :address_type,
           :land_mark,
           {
-            location_attributes: [:latitude, :longitude]
+            location_attributes: [:id, :latitude, :longitude]
           }
         ]
       }
