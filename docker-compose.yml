@@ -28,7 +28,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DATABASE_NAME: ${DATABASE_NAME}
-      DB_HOST: postgres       # ← must match service name of Postgres
+      DB_HOST: postgres
       DB_PORT: 5432
       DB_ADAPTER: ${DB_ADAPTER}
       DB_USER_NAME: ${POSTGRES_USER}
@@ -57,11 +57,10 @@ services:
       RAILS_ENV: ${RAILS_ENV}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${DATABASE_NAME}
       REDIS_URL: ${REDIS_URL}
-      PGSSLMODE: disable
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DATABASE_NAME: ${DATABASE_NAME}
-      DB_HOST: postgres       # ← must match service name of Postgres
+      DB_HOST: postgres
       DB_PORT: 5432
       DB_ADAPTER: ${DB_ADAPTER}
       DB_USER_NAME: ${POSTGRES_USER}
