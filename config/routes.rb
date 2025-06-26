@@ -1,5 +1,6 @@
 require 'rack/session/cookie'
 require 'sidekiq/web'
+require 'sidekiq/cron/web'
 
 Rails.application.routes.draw do
   resources :crm_customer_mappings
@@ -7,8 +8,7 @@ Rails.application.routes.draw do
   resources :reference_data
   use_doorkeeper
   devise_for :users
-  # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
-  # get '*other', to: 'home#index'
+
   api_version(module: 'V1', header: { name: 'Accept', value: 'application/vnd.earlybird.com; version=1' }) do
     devise_scope :user do
       # resources :otps do
@@ -65,9 +65,7 @@ Rails.application.routes.draw do
     end
   end
 
-  # Move Sidekiq web UI routes BEFORE any catch-all routes
-  require 'sidekiq/web'
-  require 'sidekiq/cron/web'
+  # Sidekiq web UI routes BEFORE any catch-all routes
   mount Sidekiq::Web => '/sidekiq'
   Sidekiq::Web.use Rack::Session::Cookie, key: '_early_bird_sidekiq_session',
                                           secret: Rails.application.credentials[:secret_key_base]
