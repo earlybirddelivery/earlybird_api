@@ -64,20 +64,15 @@ Rails.application.routes.draw do
       resources :orders, only: [:update]
     end
   end
-  match '*path', to: 'application#common_response', via: %i[get post]
 
+  # Move Sidekiq web UI routes BEFORE any catch-all routes
   require 'sidekiq/web'
   require 'sidekiq/cron/web'
   mount Sidekiq::Web => '/sidekiq'
   Sidekiq::Web.use Rack::Session::Cookie, key: '_early_bird_sidekiq_session',
-                                        secret: Rails.application.credentials[:secret_key_base]
+                                          secret: Rails.application.credentials[:secret_key_base]
   unless Rails.env.development?
     Sidekiq::Web.use(Rack::Auth::Basic) do |username, password|
-      # Protect against timing attacks:
-      # - See https://codahale.com/a-lesson-in-timing-attacks/
-      # - See https://thisdata.com/blog/timing-attacks-against-string-comparison/
-      # - Use & (do not use &&) so that it doesn't short circuit.
-      # - Use digests to stop length information leaking (see also ActiveSupport::SecurityUtils.variable_size_secure_compare)
       ActiveSupport::SecurityUtils.secure_compare(::Digest::SHA256.hexdigest(username),
                                                   ::Digest::SHA256.hexdigest(ENV['SIDEKIQ_USERNAME'])
                                                  ) &
@@ -86,5 +81,8 @@ Rails.application.routes.draw do
                                                    )
     end
   end
+
+  # Catch-all routes should be LAST
+  match '*path', to: 'application#common_response', via: %i[get post]
   get '*other', to: 'home#index'
 end
