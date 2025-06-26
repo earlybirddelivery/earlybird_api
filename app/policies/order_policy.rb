@@ -7,7 +7,7 @@ class OrderPolicy < ApplicationPolicy
 
   def permitted_attributes
     [
-      :id, :area, :delivery_boy_id, :address_detail_id, :payment_method, :packed, :delivery_date, :order_type,
+      :id, :area, :delivery_boy_id, :address_detail_id, :payment_method, :packed, :delivery_date, :order_type, :payment_notes, :amount_paid_offline,
       {
         order_items_attributes: [
           :id, :product_id, :product_variant_id, :product_variant_version_id, :count, :quantity_per_day, :total_quantity, :subscription_start_date, 
